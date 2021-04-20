@@ -1,35 +1,35 @@
-{
+{git
   "log": "logs",
   "server": [
     {
       "vhost": "example1.ge",
       "ip": "127.0.0.1",
       "port": 8888,
-      "documentroot": "./statics/sample_files/example1.ge"
+      "documentroot": "example1.ge"
     },
     {
       "vhost": "example2.ge",
       "ip": "127.0.0.1",
       "port": 8888,
-      "documentroot": "./statics/sample_files/example2.ge"
+      "documentroot": "example2.ge"
     },
     {
       "vhost": "example3.ge",
       "ip": "127.0.0.1",
       "port": 8888,
-      "documentroot": "./statics/sample_files/example3.ge"
+      "documentroot": "example3.ge"
     },
     {
       "vhost": "example4.ge",
       "ip": "127.0.0.1",
       "port": 8080,
-      "documentroot": "./sample_files/example4.ge"
+      "documentroot": "example4.ge"
     },
     {
       "vhost": "example5.ge",
       "ip": "127.0.0.1",
       "port": 8080,
-      "documentroot": "./statics/sample_files/example5.ge"
+      "documentroot": "example5.ge"
     }
   ]
 }

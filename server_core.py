@@ -1,15 +1,15 @@
 from os import path
 
-from request_handler.request_handler import *
-from request_handler.http_request_parser.http_request_parser import *
-from http_response_generator.response_generator import *
-from http_response_generator.utils.html_generator import *
+import logger
+from http_request_parser import *
+from http_response_generator import *
+from html_generator import *
 
 
 def process_http_request_callback(raw_http_request, document_root,
                                   is_persistent_connection_used, send_response_bytes_callback, log_message_callback,
                                   is_host_valid):
-    request_type = get_metohd_type_of_raw_http_request(raw_http_request)
+    request_type = get_type_of_raw_http_request(raw_http_request)
     if request_type == 'GET':
         _serve_get_request(raw_http_request, document_root,
                            is_persistent_connection_used, send_response_bytes_callback, log_message_callback,
@@ -22,7 +22,7 @@ def process_http_request_callback(raw_http_request, document_root,
 
 
 def is_http_connection_persistent_callback(raw_http_request):
-    return is_raw_http_request_persistent(raw_http_request)
+    return is_http_request_persistent(raw_http_request)
 
 
 def has_http_request_connection_close_header_callback(raw_http_request):
@@ -43,7 +43,7 @@ def _serve_get_request(raw_http_request, document_root, is_persistent_connection
         response_body = _modify_response_body_with_range_headers(generated_html_file, raw_http_request)
         response = generate_raw_OK_response_with_body_of(response_body,
                                                          is_persistent_connection_used, '.html',
-                                                         get_user_agent_header_of_raw_http_request(raw_http_request))
+                                                         get_user_agent_header(raw_http_request))
         send_response_bytes(response.encode())
         log_message_callback('200', str(len(response_body.encode('utf-8'))), False)
     elif path.isfile(full_path):
@@ -54,8 +54,7 @@ def _serve_get_request(raw_http_request, document_root, is_persistent_connection
                 file_content = _modify_response_body_with_range_headers(file_content, raw_http_request)
                 head_response = generate_raw_OK_response_without_body(len(file_content), is_persistent_connection_used,
                                                                       file_extension,
-                                                                      get_user_agent_header_of_raw_http_request(
-                                                                          raw_http_request))
+                                                                      get_user_agent_header(raw_http_request))
                 send_response_bytes(head_response.encode() + file_content)
                 log_message_callback('200', str(len(file_content)), False)
             else:
@@ -63,8 +62,7 @@ def _serve_get_request(raw_http_request, document_root, is_persistent_connection
                 res = _modify_response_body_with_range_headers(file_content, raw_http_request)
                 response = generate_raw_OK_response_with_body_of(res, is_persistent_connection_used,
                                                                  file_extension,
-                                                                 get_user_agent_header_of_raw_http_request(
-                                                                     raw_http_request))
+                                                                 get_user_agent_header(raw_http_request))
                 send_response_bytes(response.encode())
                 log_message_callback('200', str(len(res.encode('utf-8'))), False)
 
@@ -83,18 +81,18 @@ def _serve_head_request(raw_http_request, document_root, is_persistent_connectio
     elif path.isdir(full_path):
         response = generate_raw_OK_response_without_body(generate_html_for_directory(request_path, document_root),
                                                          is_persistent_connection_used, '.html',
-                                                         get_user_agent_header_of_raw_http_request(raw_http_request))
+                                                         get_user_agent_header(raw_http_request))
         send_response_bytes(response.encode())
     elif path.isfile(full_path):
         file_extension = path.splitext(full_path)[1]
         content_size = path.getsize(full_path)
         response = generate_raw_OK_response_without_body(content_size, is_persistent_connection_used, file_extension,
-                                                         get_user_agent_header_of_raw_http_request(raw_http_request))
+                                                         get_user_agent_header(raw_http_request))
         send_response_bytes(response.encode())
 
 
 def _modify_response_body_with_range_headers(response_body, raw_http_request):
-    lower, upper = get_tuple_of_raw_http_request_range_header(raw_http_request, 0, len(response_body))
+    lower, upper = get_value_tuple_for_range_header(raw_http_request, 0, len(response_body))
     return response_body[lower:upper + 1]
 
 
