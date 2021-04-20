@@ -1,53 +1,12 @@
-import argparse
-import subprocess
-import time
-import signal
-import os
-from basicHttp import basicHttp
-from virtualhost import virtualhost
-from keepalive import keepalive
-from rangeheader import rangeheader
-from parallelhttp import parallelhttp
-from logTest import logTest
+from server_configuration_parser import *
+from http_server_requester import *
+from http_server_core import *
 
 
+# Test for configuration parser
 def main():
-    parser = argparse.ArgumentParser(description='HTTP tests')
-    parser.add_argument('http_server', help='Path to http server file.')
-    parser.add_argument('config_file', help='Path to configuration file.')
-    args = parser.parse_args()
-
-    try:
-        proc = subprocess.Popen(['python3', args.http_server, args.config_file])
-    except subprocess.CalledProcessError as err:
-        print("Could not start server: {}".format(err))
-
-    print('server started successfully')
-    time.sleep(1)
-
-    total_score = 0
-    tests = [(basicHttp, 30), (virtualhost, 20), (parallelhttp, 20),
-             (keepalive, 15), (rangeheader, 15)]
-
-    for test, scaler in tests:
-        t = test(args.config_file)
-        result = t.run() * scaler
-        total_score += result
-
-    print("---------------------\nTest for bonus")
-    t = logTest(args.config_file)
-    bonus = (t.run() == 1)
-
-    print("---------------------\nTotal score is: {}".format(total_score))
-    if bonus:
-        print("You got bonus +5%")
-    else:
-        print("No bonus, try harder!")
-
-        # stop service
-
-    # time.sleep(10)
-    os.kill(proc.pid, signal.SIGUSR1)
+    virtual_host_config = get_virtual_host_info_dict('config.json')
+    start_receiving_connections(virtual_host_config, process_http_request_callback)
 
 
 if __name__ == '__main__':

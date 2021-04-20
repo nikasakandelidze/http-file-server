@@ -15,27 +15,24 @@ virtual_hosts = {}
 
 
 def start_receiving_connections(virtual_servers, process_request_callback):
-    try:
-        for virtual_host in virtual_servers:
-            _port = virtual_host['port']
-            vhost_ = virtual_host['vhost']
-            documentroot_ = virtual_host['documentroot']
-            # logger.create_log_for_vhost(vhost_)
-            vhost_documentroot_tuple = (vhost_, documentroot_)
-            if _port in virtual_hosts.keys():
-                virtual_hosts[_port].append(vhost_documentroot_tuple)
-            else:
-                server_socket = socket(AF_INET, SOCK_STREAM)
-                server_socket.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
-                server_socket.bind((virtual_host['ip'], _port))
-                server_socket.listen(__BACKLOG)
-                empty_list = list()
-                empty_list.append(vhost_documentroot_tuple)
-                virtual_hosts[_port] = empty_list
-                vhost_server_thread = Thread(target=serve_vhost, args=(_port, process_request_callback, server_socket))
-                vhost_server_thread.start()
-    except Exception as e:
-        pass
+    for virtual_host in virtual_servers:
+        _port = virtual_host['port']
+        vhost_ = virtual_host['vhost']
+        documentroot_ = virtual_host['documentroot']
+        # logger.create_log_for_vhost(vhost_)
+        vhost_documentroot_tuple = (vhost_, documentroot_)
+        if _port in virtual_hosts.keys():
+            virtual_hosts[_port].append(vhost_documentroot_tuple)
+        else:
+            server_socket = socket(AF_INET, SOCK_STREAM)
+            server_socket.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
+            server_socket.bind((virtual_host['ip'], _port))
+            server_socket.listen(__BACKLOG)
+            empty_list = list()
+            empty_list.append(vhost_documentroot_tuple)
+            virtual_hosts[_port] = empty_list
+            vhost_server_thread = Thread(target=serve_vhost, args=(_port, process_request_callback, server_socket))
+            vhost_server_thread.start()
 
 
 def serve_vhost(_port, process_request_callback, server_socket):
@@ -53,13 +50,15 @@ def _serve_client(_socket, _port, process_request_callback, client_address):
     document_root = _get_document_root_for_vhost(_port, request_host_header)
     is_host_valid = is_host_header_valid(request_host_header)
     if is_connection_persistent:
-        _serve_persistent_connection(_socket, document_root, process_request_callback, raw_client_input, client_address, is_host_valid)
+        _serve_persistent_connection(_socket, document_root, process_request_callback, raw_client_input, client_address,
+                                     is_host_valid)
     else:
         _serve_nonpersistent_connection(_socket, document_root, process_request_callback, raw_client_input,
                                         client_address, is_host_valid)
 
 
-def _serve_persistent_connection(_socket, document_root, process_request_callback, raw_client_input, client_address, is_host_valid):
+def _serve_persistent_connection(_socket, document_root, process_request_callback, raw_client_input, client_address,
+                                 is_host_valid):
     should_close_connection = False
     log_file_full_path = os.getcwd() + '/logs' + '/' + document_root + '.log'
     try:
@@ -69,24 +68,23 @@ def _serve_persistent_connection(_socket, document_root, process_request_callbac
                 should_close_connection = True
             process_request_callback(raw_client_input, document_root, True,
                                      lambda response_bytes: _socket.sendall(response_bytes),
-                                     get_lambda_for_logging(raw_client_input, client_address, log_file_full_path), is_host_valid)
+                                     get_lambda_for_logging(raw_client_input, client_address, log_file_full_path),
+                                     is_host_valid)
             if should_close_connection:
                 raise Exception('Closing connection according to Connection: Close header')
             raw_client_input = _socket.recv(__SOCKET_RECV_SIZE).decode()
-    except Exception as e:
-        pass
     finally:
         _socket.close()
 
 
-def _serve_nonpersistent_connection(_socket, document_root, process_request_callback, raw_client_input, client_address, is_host_valid):
+def _serve_nonpersistent_connection(_socket, document_root, process_request_callback, raw_client_input, client_address,
+                                    is_host_valid):
     log_file_full_path = os.getcwd() + '/logs' + '/' + document_root + '.log'
     try:
         process_request_callback(raw_client_input, document_root, False,
                                  lambda response_bytes: _socket.sendall(response_bytes),
-                                 get_lambda_for_logging(raw_client_input, client_address, log_file_full_path), is_host_valid)
-    except Exception as e:
-        pass
+                                 get_lambda_for_logging(raw_client_input, client_address, log_file_full_path),
+                                 is_host_valid)
     finally:
         _socket.close()
 

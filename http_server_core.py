@@ -2,7 +2,7 @@ from os import path
 
 import logger
 from http_request_parser import *
-from http_response_generator import *
+from http_server_response_generator import *
 from html_generator import *
 
 
