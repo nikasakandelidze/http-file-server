@@ -5,6 +5,7 @@ from threading import Thread
 import logger
 from http_request_parser import is_http_request_persistent, has_http_request_close_header, get_http_request_host_header, \
     get_path_of_raw_http_request, get_user_agent_header
+from http_request_validator import *
 
 __BACKLOG = 1024
 __SOCKET_RECV_SIZE = 2048
@@ -48,7 +49,7 @@ def _serve_client(_socket, _port, process_request_callback, client_address):
     is_connection_persistent = is_http_request_persistent(raw_client_input)
     request_host_header = get_http_request_host_header(raw_client_input)
     document_root = _get_document_root_for_vhost(_port, request_host_header)
-    is_host_valid = is_host_header_valid(request_host_header)
+    is_host_valid = is_host_header_valid(request_host_header, virtual_hosts)
     if is_connection_persistent:
         _serve_persistent_connection(_socket, document_root, process_request_callback, raw_client_input, client_address,
                                      is_host_valid)
@@ -91,25 +92,13 @@ def _serve_nonpersistent_connection(_socket, document_root, process_request_call
 
 def _get_document_root_for_vhost(_port, host_header_value):
     document_root = 'None'
-    if not is_host_header_valid(host_header_value):
+    if not is_host_header_valid(host_header_value, virtual_hosts):
         return document_root
     list_of_vhosts_on_port = virtual_hosts[_port]
     for vhost in list_of_vhosts_on_port:
         if vhost[0] in host_header_value:
             document_root = vhost[1]
     return document_root
-
-
-def is_host_header_valid(host_header_value):
-    for virutal_host_key in virtual_hosts.keys():
-        for vhost_tuple in virtual_hosts[virutal_host_key]:
-            vhost_tuple_ = vhost_tuple[1]
-            header_value = './statics/' + host_header_value.strip()
-            value = vhost_tuple_ == header_value
-            tuple_ = header_value == vhost_tuple_
-            if value or tuple_:
-                return True
-    return False
 
 
 def get_lambda_for_logging(raw_client_input, client_address, file_full_path):
